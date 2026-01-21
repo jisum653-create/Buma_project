@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1979, 타오르는 청년의 열정: 부마민주항쟁의 목소리</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-cloud/1.2.5/d3.layout.cloud.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;500;700;900&display=swap');
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* --- 상단 히어로 섹션 --- */
+        .hero-header {
+            position: relative;
+            width: 100%;
+            height: 350px;
+            background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('https://images.unsplash.com/photo-1533613220915-609f661a6fe1?q=80&w=1920&auto=format&fit=crop'); 
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            margin-bottom: 40px;
+        }
+
+        .hero-header h2 {
+            font-size: 2.5rem;
+            margin: 0 0 15px 0;
+            font-weight: 900;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            letter-spacing: -1px;
+            word-break: keep-all;
+            padding: 0 20px;
+        }
+
+        .hero-header .description {
+            font-size: 1.1rem;
+            max-width: 700px;
+            color: #f0f0f0;
+            line-height: 1.6;
+            padding: 0 20px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            margin: 0;
+        }
+
+        /* 홈 버튼 스타일 */
+        .home-button {
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            text-decoration: none;
+            color: white;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+            z-index: 100;
+        }
+
+        .home-button:hover {
+            background-color: white;
+            color: #333;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .home-button svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* --- 메인 콘텐츠 래퍼 --- */
+        .content-wrapper {
+            width: 100%;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 40px 60px 40px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        /* --- 워드클라우드 스타일 --- */
+        #word-cloud {
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            padding: 20px;
+            width: 100%;
+            max-width: 800px;
+            height: 500px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            margin-bottom: 20px;
+            transition: height 0.3s ease; /* 높이 변경 시 부드럽게 */
+        }
+
+        /* --- 필터 버튼 스타일 (New) --- */
+        .filter-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-family: 'Noto Sans KR', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background-color: #eee;
+            color: #555;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .filter-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .filter-btn.active {
+            color: white;
+            font-weight: 700;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        /* 버튼별 색상 (활성화 시) */
+        .filter-btn[data-category="all"].active { background-color: #555; }
+        .filter-btn[data-category="action"].active { background-color: #D32F2F; }
+        .filter-btn[data-category="value"].active { background-color: #1976D2; }
+        .filter-btn[data-category="emotion"].active { background-color: #F57C00; }
+
+        /* 비활성 상태일 때의 호버 색상 */
+        .filter-btn[data-category="action"]:not(.active):hover { color: #D32F2F; background-color: #ffebee; }
+        .filter-btn[data-category="value"]:not(.active):hover { color: #1976D2; background-color: #e3f2fd; }
+        .filter-btn[data-category="emotion"]:not(.active):hover { color: #F57C00; background-color: #fff3e0; }
+
+
+        /* --- 범례 스타일 --- */
+        .legend {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 40px;
+            font-size: 0.9rem;
+            background: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .tooltip {
+            position: absolute;
+            text-align: center;
+            padding: 10px 14px;
+            font-size: 14px;
+            background: rgba(33, 33, 33, 0.95);
+            color: #fff;
+            border-radius: 8px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 10;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            line-height: 1.4;
+        }
+        
+        /* 분석 테이블 스타일 */
+        .analysis-table-container {
+            width: 100%;
+            max-width: 800px;
+            margin-bottom: 40px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .analysis-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+        }
+
+        .analysis-table th, .analysis-table td {
+            padding: 15px 20px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .analysis-table th {
+            background-color: #f8f9fa;
+            font-weight: 700;
+            color: #333;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .analysis-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .category-cell {
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        
+        .cat-action { color: #D32F2F; }
+        .cat-value { color: #1976D2; }
+        .cat-emotion { color: #F57C00; }
+
+        .keywords-cell {
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .interpretation-cell {
+            color: #444;
+            line-height: 1.5;
+            font-size: 0.9rem;
+            background-color: #fafafa;
+        }
+
+        /* 참고 자료 섹션 스타일 */
+        .sources-container {
+            width: 100%;
+            max-width: 800px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            padding: 30px;
+            box-sizing: border-box;
+        }
+
+        .sources-container h3 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            color: #333;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .source-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 0;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s;
+        }
+
+        .source-item:hover {
+            background-color: #fafafa;
+        }
+
+        .source-item:last-child {
+            border-bottom: none;
+        }
+
+        .source-info {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            flex: 1;
+            margin-right: 15px;
+        }
+
+        .source-title {
+            font-weight: 600;
+            color: #222;
+            font-size: 0.95rem;
+        }
+
+        .source-origin {
+            font-size: 0.8rem;
+            color: #777;
+        }
+
+        .source-link {
+            display: inline-block;
+            background-color: #555;
+            color: white;
+            padding: 7px 14px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .source-link:hover {
+            background-color: #D32F2F;
+            transform: translateY(-1px);
+        }
+
+        @media (max-width: 800px) {
+            .hero-header {
+                height: 280px;
+                padding: 0 10px;
+            }
+            .hero-header h2 {
+                font-size: 1.8rem;
+            }
+            .content-wrapper {
+                padding: 0 20px 40px 20px;
+                align-items: center;
+            }
+            .analysis-table th, .analysis-table td {
+                padding: 10px;
+                display: block;
+                width: 100%;
+                box-sizing: border-box;
+            }
+            .analysis-table th {
+                display: none;
+            }
+            .category-cell {
+                font-size: 1.1rem;
+                margin-bottom: 5px;
+                border-bottom: none;
+                padding-bottom: 0;
+            }
+            .keywords-cell {
+                padding-top: 0;
+                padding-bottom: 10px;
+            }
+            .interpretation-cell {
+                background-color: #f4f4f4;
+                border-radius: 8px;
+                margin-bottom: 20px;
+            }
+            .source-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            .source-link {
+                width: 100%;
+                text-align: center;
+                box-sizing: border-box;
+            }
+            .source-info {
+                margin-right: 0;
+            }
+            .filter-container {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 상단 히어로 섹션 -->
+    <header class="hero-header">
+        <a href="index.html" class="home-button" aria-label="메인으로 이동">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+        </a>
+
+        <h2>1979, 타오르는 청년의 열정: 부마민주항쟁의 목소리</h2>
+        <p class="description">
+            1979년 10월, 부산대학교 청년들의 선언문과 기록에서 추출한 핵심 단어들입니다.<br>
+            그들의 뜨거운 열정과 시대정신을 데이터로 시각화했습니다.
+        </p>
+    </header>
+
+    <!-- 메인 콘텐츠 래퍼 -->
+    <div class="content-wrapper">
+        
+        <!-- 워드클라우드 영역 -->
+        <div id="word-cloud"></div>
+
+        <!-- 필터 버튼 영역 (New) -->
+        <div class="filter-container">
+            <button class="filter-btn active" data-category="all" onclick="filterWords('all')">
+                <span>전체 보기</span>
+            </button>
+            <button class="filter-btn" data-category="action" onclick="filterWords('action')">
+                <div class="dot" style="background-color: #D32F2F;"></div>
+                <span>행동 (Action)</span>
+            </button>
+            <button class="filter-btn" data-category="value" onclick="filterWords('value')">
+                <div class="dot" style="background-color: #1976D2;"></div>
+                <span>가치 (Value)</span>
+            </button>
+            <button class="filter-btn" data-category="emotion" onclick="filterWords('emotion')">
+                <div class="dot" style="background-color: #F57C00;"></div>
+                <span>감정 (Emotion)</span>
+            </button>
+        </div>
+
+        <!-- 범례 (유지하되 필터 버튼과 함께 정보 제공) -->
+        <!-- <div class="legend">...</div>  범례 내용은 이미 필터 버튼에 포함되어 있어 중복을 피하기 위해 제거하거나 유지할 수 있음. 
+             요청하신 내용에 따라 버튼 아래에 기존 범례는 시각적 중복이 될 수 있으나, 
+             디자인 일관성을 위해 버튼으로 기능을 통합하고, 아래 분석 테이블과의 간격을 위해 남겨두거나 삭제해도 좋습니다.
+             여기서는 깔끔함을 위해 '범례' 섹션을 삭제하고 버튼이 그 역할을 대신하게 합니다.
+        -->
+
+        <!-- 분석 테이블 섹션 -->
+        <div class="analysis-table-container">
+            <table class="analysis-table">
+                <thead>
+                    <tr>
+                        <th width="15%">분류</th>
+                        <th width="50%">주요 키워드</th>
+                        <th width="35%">해석 (청년의 열정 분석)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="category-cell cat-action">행동 언어<br><small>(Action)</small></td>
+                        <td class="keywords-cell">
+                            <strong>독재 타도, 유신 철폐, 투쟁</strong>, 횃불, 스크럼, 항거, 연대, 정문 돌파, 도서관, 최루탄, 직선제, 궐기
+                        </td>
+                        <td class="interpretation-cell">
+                            당시의 열정은 내면의 고민에 머무르지 않고, <strong>직접 몸으로 부딪히는 실천적 에너지</strong>였음을 보여줍니다. '타도', '철폐', '돌파' 같은 강력한 파열음의 단어가 주를 이룹니다.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="category-cell cat-value">가치 언어<br><small>(Value)</small></td>
+                        <td class="keywords-cell">
+                            <strong>자유, 민주, 정의</strong>, 민족, 양심, 진리, 지성, 사명감, 책임감, 역사, 애국
+                        </td>
+                        <td class="interpretation-cell">
+                            행동의 명분입니다. 개인의 이익(취업, 성적)이 아닌 <strong>공동체의 가치(민족, 역사, 정의)</strong>를 최우선으로 두었음을 알 수 있습니다.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="category-cell cat-emotion">감정 언어<br><small>(Emotion)</small></td>
+                        <td class="keywords-cell">
+                            <strong>분노, 피, 함성</strong>, 용기, 두려움, 부끄러움, 식어가는 정열, 박수, 고뇌
+                        </td>
+                        <td class="interpretation-cell">
+                            단순한 흥분이 아닌, 현실에 대한 <strong>'의분(의로운 분노)'</strong>과 지성인으로서 행동하지 못하는 것에 대한 <strong>'부끄러움'</strong>이 행동의 동력이 되었습니다.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 참고 자료 섹션 -->
+        <div class="sources-container">
+            <h3>📊 데이터 출처 및 참고 자료</h3>
+            
+            <div class="source-item">
+                <div class="source-info">
+                    <span class="source-title">부마 항쟁시 부산대 학생들의 민주 선언문</span>
+                    <span class="source-origin">국사편찬위원회 (우리역사넷)</span>
+                </div>
+                <a href="https://contents.history.go.kr/id/hm_150_0140" target="_blank" class="source-link">원문 보기 ↗</a>
+            </div>
+
+            <div class="source-item">
+                <div class="source-info">
+                    <span class="source-title">민주투쟁선언문 (10.15 배포 원문)</span>
+                    <span class="source-origin">부마민주항쟁기념재단 아카이브</span>
+                </div>
+                <a href="http://www.buma1979.com/portal/bumaRecord/view.do?record_id=37" target="_blank" class="source-link">원문 보기 ↗</a>
+            </div>
+
+            <div class="source-item">
+                <div class="source-info">
+                    <span class="source-title">[특집] 부마민주항쟁 발자취 따라가다 (시간대별 정리)</span>
+                    <span class="source-origin">채널PNU (부산대신문사)</span>
+                </div>
+                <a href="https://channelpnu.pusan.ac.kr/news/articleView.html?idxno=31840" target="_blank" class="source-link">원문 보기 ↗</a>
+            </div>
+
+            <div class="source-item">
+                <div class="source-info">
+                    <span class="source-title">2022 부마민주항쟁 구술사료집 (참여자 증언)</span>
+                    <span class="source-origin">부마민주항쟁기념재단</span>
+                </div>
+                <a href="http://www.buma1979.com/portal/archive/introResourceBook/file/18.do" target="_blank" class="source-link">원문 보기 ↗</a>
+            </div>
+
+            <div class="source-item">
+                <div class="source-info">
+                    <span class="source-title">부마민주항쟁 정의 및 전개 과정</span>
+                    <span class="source-origin">한국민족문화대백과사전</span>
+                </div>
+                <a href="https://encykorea.aks.ac.kr/Article/E0024157" target="_blank" class="source-link">원문 보기 ↗</a>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        // 원본 데이터: 단어, 가중치(빈도), 카테고리
+        const allWords = [
+            // 행동 언어 (Action) - Red
+            {text: "독재타도", size: 100, category: "action"},
+            {text: "유신철폐", size: 95, category: "action"},
+            {text: "투쟁", size: 90, category: "action"},
+            {text: "횃불", size: 70, category: "action"},
+            {text: "스크럼", size: 65, category: "action"},
+            {text: "항거", size: 60, category: "action"},
+            {text: "연대", size: 55, category: "action"},
+            {text: "정문돌파", size: 50, category: "action"},
+            {text: "도서관", size: 45, category: "action"},
+            {text: "최루탄", size: 40, category: "action"},
+            {text: "직선제", size: 55, category: "action"},
+            {text: "궐기", size: 60, category: "action"},
+
+            // 가치 언어 (Value) - Blue
+            {text: "자유", size: 95, category: "value"},
+            {text: "민주", size: 90, category: "value"},
+            {text: "정의", size: 85, category: "value"},
+            {text: "민족", size: 75, category: "value"},
+            {text: "양심", size: 70, category: "value"},
+            {text: "진리", size: 65, category: "value"},
+            {text: "지성", size: 60, category: "value"},
+            {text: "사명감", size: 55, category: "value"},
+            {text: "책임감", size: 50, category: "value"},
+            {text: "역사", size: 55, category: "value"},
+            {text: "애국", size: 45, category: "value"},
+
+            // 감정 언어 (Emotion) - Orange
+            {text: "분노", size: 80, category: "emotion"},
+            {text: "피", size: 75, category: "emotion"},
+            {text: "함성", size: 70, category: "emotion"},
+            {text: "용기", size: 60, category: "emotion"},
+            {text: "두려움", size: 55, category: "emotion"},
+            {text: "부끄러움", size: 50, category: "emotion"},
+            {text: "식어가는 정열", size: 45, category: "emotion"},
+            {text: "박수", size: 40, category: "emotion"},
+            {text: "고뇌", size: 45, category: "emotion"},
+        ];
+
+        // 색상 매핑
+        const colors = {
+            action: "#D32F2F", // Red
+            value: "#1976D2",  // Blue
+            emotion: "#F57C00" // Orange
+        };
+
+        // 워드클라우드 렌더링 함수
+        function renderWordCloud(data) {
+            // 기존 SVG 삭제
+            document.getElementById('word-cloud').innerHTML = '';
+            
+            const width = document.getElementById('word-cloud').offsetWidth;
+            const height = 500;
+
+            // 데이터 깊은 복사 (d3-cloud는 객체를 변형시키므로 재사용을 위해 복사 필요)
+            const layoutData = data.map(d => ({ 
+                text: d.text, 
+                size: d.size, 
+                category: d.category 
+            }));
+
+            const layout = d3.layout.cloud()
+                .size([width, height])
+                .words(layoutData)
+                .padding(5)
+                .rotate(function() { return ~~(Math.random() * 2) * 90; })
+                .font("Noto Sans KR")
+                .fontSize(function(d) { return d.size * 0.8; })
+                .on("end", draw);
+
+            layout.start();
+
+            function draw(words) {
+                const svg = d3.select("#word-cloud").append("svg")
+                    .attr("width", layout.size()[0])
+                    .attr("height", layout.size()[1])
+                    .append("g")
+                    .attr("transform", "translate(" + layout.size()[0] / 2 + "," + layout.size()[1] / 2 + ")");
+
+                const textGroups = svg.selectAll("text")
+                    .data(words)
+                    .enter().append("text")
+                    .style("font-size", function(d) { return d.size + "px"; })
+                    .style("font-family", "Noto Sans KR")
+                    .style("font-weight", "bold")
+                    .style("fill", function(d) { return colors[d.category]; })
+                    .attr("text-anchor", "middle")
+                    .attr("transform", function(d) {
+                        return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
+                    })
+                    .text(function(d) { return d.text; })
+                    .style("cursor", "pointer")
+                    .style("opacity", 0)
+                    .on("mouseover", function(event, d) {
+                        d3.select(this).style("opacity", 0.7);
+                        const tooltip = d3.select("#tooltip");
+                        let categoryName = "";
+                        if(d.category === 'action') categoryName = "행동 언어";
+                        else if(d.category === 'value') categoryName = "가치 언어";
+                        else categoryName = "감정 언어";
+
+                        tooltip.transition().duration(200).style("opacity", .9);
+                        tooltip.html(`<strong>${d.text}</strong><br/>분류: ${categoryName}<br/>가중치: ${d.size}`)
+                            .style("left", (event.pageX + 10) + "px")
+                            .style("top", (event.pageY - 28) + "px");
+                    })
+                    .on("mouseout", function(d) {
+                        d3.select(this).style("opacity", 1);
+                        d3.select("#tooltip").transition().duration(500).style("opacity", 0);
+                    });
+
+                // 등장 애니메이션
+                textGroups.transition()
+                    .duration(800)
+                    .style("opacity", 1);
+            }
+        }
+
+        // 필터링 함수
+        function filterWords(category) {
+            // 버튼 활성화 스타일 변경
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if(btn.dataset.category === category) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // 데이터 필터링
+            let filteredData;
+            if (category === 'all') {
+                filteredData = allWords;
+            } else {
+                filteredData = allWords.filter(word => word.category === category);
+            }
+
+            // 재렌더링
+            renderWordCloud(filteredData);
+        }
+
+        // 초기 렌더링
+        renderWordCloud(allWords);
+
+        // 반응형 리사이징
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                // 현재 활성화된 카테고리 찾기
+                const activeCategory = document.querySelector('.filter-btn.active').dataset.category;
+                filterWords(activeCategory);
+            }, 200);
+        });
+
+    </script>
+</body>
+</html>
