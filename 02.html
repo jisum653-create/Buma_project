@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2025, 차가운 생존: 청년의 침묵과 각자도생</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-cloud/1.2.5/d3.layout.cloud.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;500;700;900&display=swap');
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        /* --- 상단 히어로 섹션 --- */
+        .hero-header {
+            position: relative;
+            width: 100%;
+            height: 380px;
+            background-image: linear-gradient(rgba(20, 30, 48, 0.7), rgba(36, 59, 85, 0.7)), url('https://images.unsplash.com/photo-1517048676732-d65bc937f952?q=80&w=1920&auto=format&fit=crop'); 
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            margin-bottom: 40px;
+            transition: background-position 0.1s;
+        }
+
+        .hero-header h2 {
+            font-size: 2.8rem;
+            margin: 0 0 15px 0;
+            font-weight: 900;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
+            letter-spacing: -1px;
+            word-break: keep-all;
+            padding: 0 20px;
+            animation: fadeInDown 1s ease-out;
+        }
+
+        .hero-header .description {
+            font-size: 1.15rem;
+            max-width: 700px;
+            color: #e0e0e0;
+            line-height: 1.6;
+            padding: 0 20px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            margin: 0;
+            animation: fadeInUp 1s ease-out 0.3s both;
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 홈 버튼 스타일 */
+        .home-button {
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            text-decoration: none;
+            color: white;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+            z-index: 100;
+        }
+
+        .home-button:hover {
+            background-color: white;
+            color: #333;
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .home-button svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* --- 콘텐츠 래퍼 --- */
+        .content-wrapper {
+            width: 100%;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 40px 60px 40px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        /* 스크롤 애니메이션 */
+        .scroll-reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 0.8s ease-out;
+        }
+        .scroll-reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* --- 워드클라우드 스타일 --- */
+        #word-cloud {
+            background-color: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            padding: 20px;
+            width: 100%;
+            max-width: 800px;
+            height: 500px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            margin-bottom: 30px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        #word-cloud:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+
+        /* --- 필터 버튼 스타일 --- */
+        .filter-container {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            border: none;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-family: 'Noto Sans KR', sans-serif;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            background-color: white;
+            color: #555;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .filter-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .filter-btn.active {
+            color: white;
+            font-weight: 700;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transform: scale(1.05);
+        }
+
+        .filter-btn[data-category="all"].active { background-color: #555; }
+        .filter-btn[data-category="action"].active { background-color: #D32F2F; }
+        .filter-btn[data-category="value"].active { background-color: #1976D2; }
+        .filter-btn[data-category="emotion"].active { background-color: #F57C00; }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .tooltip {
+            position: absolute;
+            text-align: center;
+            padding: 10px 16px;
+            font-size: 14px;
+            background: rgba(0, 0, 0, 0.85);
+            color: #fff;
+            border-radius: 8px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 100;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            line-height: 1.5;
+            transform: translate(-50%, -100%);
+            margin-top: -10px; 
+            white-space: nowrap;
+        }
+        
+        /* 분석 테이블 스타일 */
+        .analysis-table-container {
+            width: 100%;
+            max-width: 800px;
+            margin-bottom: 50px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .analysis-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+        }
+
+        .analysis-table th, .analysis-table td {
+            padding: 18px 24px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+            transition: all 0.4s ease;
+        }
+
+        .analysis-table th {
+            background-color: #f8f9fa;
+            font-weight: 700;
+            color: #333;
+            border-bottom: 2px solid #e0e0e0;
+            font-size: 1rem;
+        }
+
+        .analysis-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .analysis-table tr.inactive-row {
+            opacity: 0.25;
+            filter: grayscale(100%);
+            background-color: #fafafa;
+        }
+
+        .analysis-table tr.active-row {
+            opacity: 1;
+            background-color: #fffcf5;
+            transform: scale(1.01);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            z-index: 10;
+            position: relative;
+        }
+
+        .category-cell {
+            font-weight: 800;
+            white-space: nowrap;
+            font-size: 1.05rem;
+        }
+        
+        .cat-action { color: #D32F2F; }
+        .cat-value { color: #1976D2; }
+        .cat-emotion { color: #F57C00; }
+
+        .keywords-cell {
+            color: #444;
+            line-height: 1.7;
+            font-weight: 500;
+        }
+
+        .interpretation-cell {
+            color: #555;
+            line-height: 1.6;
+            font-size: 0.92rem;
+            background-color: #fcfcfc;
+            border-radius: 8px;
+        }
+
+        /* 참고 자료 섹션 스타일 */
+        .sources-container {
+            width: 100%;
+            max-width: 800px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            padding: 35px;
+            box-sizing: border-box;
+        }
+
+        .sources-container h3 {
+            margin-top: 0;
+            margin-bottom: 25px;
+            font-size: 1.2rem;
+            color: #333;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .source-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 10px;
+            border-bottom: 1px solid #f5f5f5;
+            border-radius: 8px;
+            transition: background-color 0.2s;
+        }
+
+        .source-item:hover {
+            background-color: #f9f9f9;
+        }
+
+        .source-info {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+            margin-right: 20px;
+        }
+
+        .source-title {
+            font-weight: 600;
+            color: #222;
+            font-size: 1rem;
+        }
+
+        .source-desc {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 2px;
+        }
+
+        .source-origin {
+            font-size: 0.8rem;
+            color: #999;
+        }
+
+        .source-link {
+            display: inline-block;
+            background-color: #f0f0f0;
+            color: #555;
+            padding: 8px 16px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .source-link:hover {
+            background-color: #333;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        @media (max-width: 800px) {
+            .hero-header { height: 320px; padding: 0 15px; }
+            .hero-header h2 { font-size: 2rem; }
+            .content-wrapper { padding: 0 20px 40px 20px; align-items: center; }
+            .analysis-table th, .analysis-table td { padding: 15px; display: block; width: 100%; box-sizing: border-box; }
+            .analysis-table th { display: none; }
+            .category-cell { font-size: 1.2rem; margin-bottom: 8px; border-bottom: none; padding-bottom: 0; }
+            .keywords-cell { padding-top: 0; padding-bottom: 15px; }
+            .interpretation-cell { background-color: #f0f0f0; border-radius: 12px; margin-bottom: 25px; padding: 15px; }
+            .source-item { flex-direction: column; align-items: flex-start; gap: 15px; }
+            .source-link { width: 100%; text-align: center; box-sizing: border-box; }
+            .filter-container { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 상단 히어로 섹션 -->
+    <header class="hero-header">
+        <a href="index.html" class="home-button" aria-label="메인으로 이동">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+        </a>
+
+        <h2>2025, 차가운 생존:<br>청년의 침묵과 각자도생</h2>
+        <p class="description">
+            2024~2025년 주요 뉴스 헤드라인 분석.<br>
+            투쟁 대신 침묵을, 연대 대신 각자도생을 선택한 청년들의 언어입니다.
+        </p>
+    </header>
+
+    <div class="content-wrapper">
+        
+        <!-- 필터 버튼 -->
+        <div class="filter-container scroll-reveal">
+            <button class="filter-btn active" data-category="all" onclick="filterWords('all')">
+                <span>전체 보기</span>
+            </button>
+            <button class="filter-btn" data-category="action" onclick="filterWords('action')">
+                <div class="dot" style="background-color: #D32F2F;"></div>
+                <span>행동 (Action)</span>
+            </button>
+            <button class="filter-btn" data-category="value" onclick="filterWords('value')">
+                <div class="dot" style="background-color: #1976D2;"></div>
+                <span>가치 (Value)</span>
+            </button>
+            <button class="filter-btn" data-category="emotion" onclick="filterWords('emotion')">
+                <div class="dot" style="background-color: #F57C00;"></div>
+                <span>감정 (Emotion)</span>
+            </button>
+        </div>
+
+        <!-- 워드클라우드 영역 -->
+        <div id="word-cloud" class="scroll-reveal"></div>
+
+        <!-- 분석 테이블 -->
+        <div class="analysis-table-container scroll-reveal">
+            <table class="analysis-table">
+                <thead>
+                    <tr>
+                        <th width="15%">분류</th>
+                        <th width="50%">주요 키워드</th>
+                        <th width="35%">해석 (청년의 열정 분석)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr data-category="action">
+                        <td class="category-cell cat-action">행동 언어<br><small>(Action)</small></td>
+                        <td class="keywords-cell">
+                            <strong>침묵, 스펙 쌓기, 투자</strong>, 경쟁, 인증, 손절, 이탈, 숨기, 포기, 잠적, 계산, 비교
+                        </td>
+                        <td class="interpretation-cell">
+                            광장에 모이는 대신 각자의 방으로 흩어졌습니다. '투쟁' 대신 <strong>'스펙'과 '자산'을 쌓으며 철저히 개인의 생존</strong>을 도모하는 '각자도생'의 행동 양식을 보입니다.
+                        </td>
+                    </tr>
+                    <tr data-category="value">
+                        <td class="category-cell cat-value">가치 언어<br><small>(Value)</small></td>
+                        <td class="keywords-cell">
+                            <strong>생존, 공정, 자산</strong>, 능력주의, 결과, 보상, 안전, 실리, 내 삶, 효능감 상실
+                        </td>
+                        <td class="interpretation-cell">
+                            거대 담론(민주, 정의)보다는 <strong>'나의 생존'과 '당장의 공정(Fairness)'</strong>에 집중합니다. 내가 노력한 만큼의 확실한 보상을 요구하는 실리주의적 태도가 강합니다.
+                        </td>
+                    </tr>
+                    <tr data-category="emotion">
+                        <td class="category-cell cat-emotion">감정 언어<br><small>(Emotion)</small></td>
+                        <td class="keywords-cell">
+                            <strong>불안, 피로감, 박탈감</strong>, 무관심, 냉소, 두려움, 무기력, 억울함, 불신, 절박함
+                        </td>
+                        <td class="interpretation-cell">
+                            과거의 뜨거운 분노가 외부로 표출되었다면, 현재는 <strong>'불안'과 '박탈감'이 내면으로 침전</strong>되었습니다. 사회 시스템에 대한 깊은 불신과 피로감이 깔려 있습니다.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 참고 자료 섹션 -->
+        <div class="sources-container scroll-reveal">
+            <h3>📊 데이터 출처 및 참고 자료</h3>
+            
+            <div class="source-item">
+                <div class="source-info">
+                    <span class="source-title">"투표? 관심 없어요"... 길 잃은 2030 표심</span>
+                    <span class="source-desc">정치 효능감 상실과 무관심에 대한 분석</span>
+                    <span class="source-origin">세계일보 (2024)</span>
+                </div>
+                <a href="https://v.daum.net/v/x7hgWENfiq" target="_blank" class="source-link">기사 보기 ↗</a>
+            </div>
+
+            <div class="source-item">
+                <div class="source-info">
+                    <span class="source-title">고립·은둔 청년 54만 돌파... "다시 나가고 싶은데"</span>
+                    <span class="source-desc">경쟁 피로와 사회적 단절 현상</span>
+                    <span class="source-origin">연합뉴스 (2023)</span>
+                </div>
+                <a href="https://www.yna.co.kr/view/AKR20231213042400530" target="_blank" class="source-link">기사 보기 ↗</a>
+            </div>
+
+            <div class="source-item">
+                <div class="source-info">
+                    <span class="source-title">"국가는 못 믿고, 각자도생 치열했다"</span>
+                    <span class="source-desc">국가 불신과 생존 본능적 재테크 열풍</span>
+                    <span class="source-origin">공감신문 (2024)</span>
+                </div>
+                <a href="https://www.gokorea.kr/news/articleView.html?idxno=852401" target="_blank" class="source-link">기사 보기 ↗</a>
+            </div>
+
+            <div class="source-item">
+                <div class="source-info">
+                    <span class="source-title">"부모보다 못 사는 최초 세대"... '노오력의 배신'</span>
+                    <span class="source-desc">기회 박탈감과 공정에 대한 집착</span>
+                    <span class="source-origin">국민일보 (2024)</span>
+                </div>
+                <a href="https://v.daum.net/v/cDjbiQK5Mt" target="_blank" class="source-link">기사 보기 ↗</a>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        // 데이터셋: 2025 청년 키워드
+        const allWords = [
+            // 행동 언어 (Action) - Red
+            {text: "침묵", size: 100, category: "action"},
+            {text: "각자도생", size: 95, category: "action"},
+            {text: "스펙쌓기", size: 90, category: "action"},
+            {text: "투자", size: 85, category: "action"},
+            {text: "경쟁", size: 80, category: "action"},
+            {text: "손절", size: 75, category: "action"},
+            {text: "숨기", size: 70, category: "action"},
+            {text: "포기", size: 65, category: "action"},
+            {text: "인증", size: 60, category: "action"},
+            {text: "이탈", size: 55, category: "action"},
+            {text: "잠적", size: 50, category: "action"},
+            {text: "비교", size: 50, category: "action"},
+            {text: "계산", size: 45, category: "action"},
+            {text: "단절", size: 60, category: "action"},
+            {text: "외면", size: 55, category: "action"},
+
+            // 가치 언어 (Value) - Blue
+            {text: "생존", size: 100, category: "value"},
+            {text: "공정", size: 95, category: "value"},
+            {text: "자산", size: 90, category: "value"},
+            {text: "내 삶", size: 85, category: "value"},
+            {text: "실리", size: 80, category: "value"},
+            {text: "능력주의", size: 75, category: "value"},
+            {text: "결과", size: 70, category: "value"},
+            {text: "보상", size: 70, category: "value"},
+            {text: "안전", size: 65, category: "value"},
+            {text: "효능감상실", size: 60, category: "value"},
+            {text: "개인", size: 60, category: "value"},
+            {text: "회피", size: 55, category: "value"},
+
+            // 감정 언어 (Emotion) - Orange
+            {text: "불안", size: 95, category: "emotion"},
+            {text: "피로감", size: 90, category: "emotion"},
+            {text: "박탈감", size: 85, category: "emotion"},
+            {text: "무관심", size: 80, category: "emotion"},
+            {text: "냉소", size: 75, category: "emotion"},
+            {text: "불신", size: 70, category: "emotion"},
+            {text: "억울함", size: 70, category: "emotion"},
+            {text: "두려움", size: 65, category: "emotion"},
+            {text: "무기력", size: 65, category: "emotion"},
+            {text: "절박함", size: 60, category: "emotion"},
+            {text: "막막함", size: 55, category: "emotion"},
+            {text: "분노", size: 50, category: "emotion"},
+        ];
+
+        const colors = {
+            action: "#D32F2F", 
+            value: "#1976D2",  
+            emotion: "#F57C00" 
+        };
+
+        // Font Size Scale: Map min-max weight to pixel size range
+        // 비중(45~100)을 폰트 크기(20px~95px)로 변환하여 시각적 차이 극대화
+        const sizeScale = d3.scaleLinear()
+            .domain([d3.min(allWords, d => d.size), d3.max(allWords, d => d.size)])
+            .range([20, 95]);
+
+        function renderWordCloud(data) {
+            document.getElementById('word-cloud').innerHTML = '';
+            
+            const width = document.getElementById('word-cloud').offsetWidth;
+            const height = 500;
+
+            const layoutData = data.map(d => ({ 
+                text: d.text, 
+                size: d.size, 
+                category: d.category 
+            }));
+
+            const layout = d3.layout.cloud()
+                .size([width, height])
+                .words(layoutData)
+                .padding(5)
+                .rotate(function() { return ~~(Math.random() * 2) * 90; })
+                .font("Noto Sans KR")
+                .fontSize(d => sizeScale(d.size)) // Scale 함수 적용
+                .on("end", draw);
+
+            layout.start();
+
+            function draw(words) {
+                const svg = d3.select("#word-cloud").append("svg")
+                    .attr("width", layout.size()[0])
+                    .attr("height", layout.size()[1])
+                    .append("g")
+                    .attr("transform", "translate(" + layout.size()[0] / 2 + "," + layout.size()[1] / 2 + ")");
+
+                const textGroups = svg.selectAll("text")
+                    .data(words)
+                    .enter().append("text")
+                    .style("font-size", function(d) { return d.size + "px"; })
+                    .style("font-family", "Noto Sans KR")
+                    .style("font-weight", "bold")
+                    .style("fill", function(d) { return colors[d.category]; })
+                    .attr("text-anchor", "middle")
+                    .attr("transform", function(d) {
+                        return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
+                    })
+                    .text(function(d) { return d.text; })
+                    .style("cursor", "pointer")
+                    .style("opacity", 0)
+                    .on("mouseover", function(event, d) {
+                        // Hover 시 약간 확대
+                        d3.select(this).transition().duration(200)
+                          .style("opacity", 0.7)
+                          .style("font-size", (d.size * 1.1) + "px");
+                        
+                        const tooltip = d3.select("#tooltip");
+                        let categoryName = "";
+                        if(d.category === 'action') categoryName = "행동 언어";
+                        else if(d.category === 'value') categoryName = "가치 언어";
+                        else categoryName = "감정 언어";
+
+                        // 원본 데이터의 'size'(비중) 값을 툴팁에 표시
+                        // d.size는 이미 scale이 적용된 폰트 크기이므로, 
+                        // 역으로 원래 비중을 찾거나, layoutData 생성 시 원본 값을 별도 저장해야 정확함.
+                        // 하지만 여기서는 편의상 시각화된 크기(=중요도)로 이해해도 무방하므로 현재 크기 표시.
+                        // 정확한 원본 비중 표시를 위해 원본 allWords에서 찾을 수도 있음.
+                        const originalWord = allWords.find(w => w.text === d.text);
+                        const weightVal = originalWord ? originalWord.size : Math.round(d.size);
+
+                        tooltip.transition().duration(200).style("opacity", .95);
+                        tooltip.html(`<strong>${d.text}</strong><br/>${categoryName}<br/><span style='font-size:0.9em; opacity:0.8'>가중치: ${weightVal}</span>`)
+                            .style("left", (event.pageX) + "px")
+                            .style("top", (event.pageY) + "px");
+                    })
+                    .on("mousemove", function(event) {
+                        d3.select("#tooltip")
+                            .style("left", (event.pageX) + "px")
+                            .style("top", (event.pageY) + "px");
+                    })
+                    .on("mouseout", function(d) {
+                        d3.select(this).transition().duration(200).style("opacity", 1).style("font-size", d.size + "px");
+                        d3.select("#tooltip").transition().duration(500).style("opacity", 0);
+                    })
+                    .on("click", function(event, d) {
+                        filterWords(d.category);
+                        const table = document.querySelector('.analysis-table-container');
+                        table.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    });
+
+                textGroups.transition()
+                    .duration(800)
+                    .ease(d3.easeBackOut)
+                    .style("opacity", 1);
+            }
+        }
+
+        function filterWords(category) {
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if(btn.dataset.category === category) {
+                    btn.classList.add('active');
+                }
+            });
+
+            let filteredData;
+            if (category === 'all') {
+                filteredData = allWords;
+            } else {
+                filteredData = allWords.filter(word => word.category === category);
+            }
+            renderWordCloud(filteredData);
+
+            const rows = document.querySelectorAll('.analysis-table tbody tr');
+            rows.forEach(row => {
+                row.classList.remove('active-row', 'inactive-row');
+                
+                if (category === 'all') {
+                    // Reset
+                } else {
+                    if (row.dataset.category === category) {
+                        row.classList.add('active-row');
+                    } else {
+                        row.classList.add('inactive-row');
+                    }
+                }
+            });
+        }
+
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.15
+        };
+
+        const observer = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.scroll-reveal').forEach(el => {
+            observer.observe(el);
+        });
+
+        renderWordCloud(allWords);
+
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                const activeCategory = document.querySelector('.filter-btn.active').dataset.category;
+                filterWords(activeCategory);
+            }, 200);
+        });
+    </script>
+</body>
+</html>
